@@ -1,197 +1,493 @@
-# WebDesign8-Rider
+<a id="top"></a>
 
-**一张肖像，两种骑士造型。** 用 Canvas 撕裂笔刷，让普通半身肖像在鼠标经过的位置切换成骑手装备。
+<div align="center">
+
+# WebDesign8 · Rider
+
+### One portrait. Two identities. Paint the transformation.
+
+A hands-on guide to Canvas masking, organic brush trails, and electric particle effects.
+
+![Canvas 2D](https://img.shields.io/badge/Canvas-2D-60a5fa?style=flat-square)
+![Vanilla JavaScript](https://img.shields.io/badge/JavaScript-Vanilla-f7df1e?style=flat-square)
+![No build](https://img.shields.io/badge/Build-None-f9a8d4?style=flat-square)
+![Two editions](https://img.shields.io/badge/Editions-2-a78bfa?style=flat-square)
+
+**[English tutorial](#english)** · **[简体中文教程](#chinese)**
+
+</div>
 
 <table>
   <tr>
-    <td width="50%"><img src="./cover.png" alt="粉色骑士版：粉色头盔与赛车夹克的 Reveal 效果" width="100%"></td>
-    <td width="50%"><img src="./cover-blue.jpg" alt="蓝色闪电版：紫色装甲头盔、青色面罩和蓝紫电光" width="100%"></td>
+    <td width="50%"><a href="./index.html"><img src="./cover.png" alt="Pink Rider — iridescent pink helmet revealed over the portrait" width="100%"></a></td>
+    <td width="50%"><a href="./blue-lightning.html"><img src="./cover-blue.jpg" alt="Blue Lightning — violet armor, cyan visor, and electric brush trails" width="100%"></a></td>
   </tr>
   <tr>
-    <td align="center"><b>Pink Rider · 粉色骑士</b></td>
-    <td align="center"><b>Blue Lightning · 蓝色闪电</b></td>
+    <td align="center"><b>PINK RIDER</b><br>Soft pink · Racing details · Organic reveal</td>
+    <td align="center"><b>BLUE LIGHTNING</b><br>Violet armor · Cyan circuitry · Electric arcs</td>
   </tr>
 </table>
 
-封面记录的是交互中的一个瞬间；实际页面的骑手图层会随笔刷出现，再逐渐收回。
+---
 
-## 两个版本
+<a id="english"></a>
 
-原来的粉色版保留在 `index.html`，蓝色闪电版使用独立文件，两个版本可以分别下载、打开和展示。
+## English
 
-| 版本 | 入口文件 | 骑手造型 | 交互特点 |
-| --- | --- | --- | --- |
-| 粉色骑士 | [index.html](./index.html) | 粉色头盔、虹彩面罩、白色条纹与心形贴章 | 硬边有机笔刷、1.1 秒缩小收回 |
-| 蓝色闪电 | [blue-lightning.html](./blue-lightning.html) | 紫色装甲头盔、蓝色电路线条、青色面罩 | 同样的 Reveal，叠加蓝紫火花与短促闪电 |
+Turn a static portrait into an interactive costume change. Move the pointer to paint a torn-edge trail, reveal the rider underneath, and watch the portrait return as each mark shrinks away.
 
-两个文件都是独立 HTML 页面，CSS 和 JavaScript 内联，无框架、无构建步骤。点击上面的文件链接可以查看源码；要体验交互，请下载文件后在浏览器中打开。
+Each edition is an independent HTML file with inline CSS and JavaScript. No framework or build step is required. The original Pink Rider edition remains intact alongside the new Blue Lightning edition.
 
-## 设计亮点
+**Read this guide:** [Quick start](#en-start) · [Design](#en-design) · [Reveal tutorial](#en-reveal) · [Lightning](#en-lightning) · [Customize](#en-customize) · [Troubleshooting](#en-help)
 
-- **浅粉舞台与高对比大字。** 柔和的粉色渐变背景托起居中的透明人物，浅灰和黑色两行大字在人物背后反向滚动，形成前后层次。
-- **同一肖像、两种装备。** 两个版本共享原始半身肖像；换装只发生在笔刷覆盖的位置，保留真实人物与虚拟装备相互交错的效果。
-- **硬边而非模糊光圈。** 多个随机圆叠加成不规则笔刷，轨迹边缘像撕纸；移开指针后印记缩小，原始肖像重新出现。
-- **蓝版独立电光层。** 火花和锯齿闪电绘制在单独的全屏 Canvas 上，不改变人物遮罩，也不影响鼠标输入。
-- **响应式画布。** 人物和电光分别依据各自显示区域调整尺寸，像素比限制为 `DPR ≤ 2`；触摸设备保留拖动和闲置自动游走。
+### Choose an edition
 
-背景文字为 `DREAM RIDE SPARKLE` 与 `RIDE PRETTY STAY BOLDER`，两行分别向左、向右连续运动。
+| Edition | Source file | What changes |
+| :--- | :--- | :--- |
+| **Pink Rider** | [index.html](./index.html) | Pink helmet, iridescent visor, white racing stripes, and heart patches. |
+| **Blue Lightning** | [blue-lightning.html](./blue-lightning.html) | Violet armor, cyan visor, fitted upper-body geometry, sparks, and lightning. |
 
-## 鼠标撕裂 Reveal：具体实现
+The covers capture moments during interaction. GitHub file links show the source; download an HTML file to experience the effect in a browser.
 
-核心是 **动态遮罩 + Canvas 合成**。它不是把骑手图片半透明地盖在肖像上，而是先擦除肖像，再把骑手限制到同一块笔刷区域。
+<a id="en-start"></a>
 
-### 1. 把鼠标轨迹转换为人物局部坐标
+### 01 / Quick start
 
-页面监听 `pointermove` 和 `pointerdown`，以人物容器的 `getBoundingClientRect()` 为基准，将 `clientX / clientY` 转换为图像内部坐标。
+**Fastest path:** download the repository ZIP, extract it, then open `index.html` or `blue-lightning.html` in a modern browser.
 
-为了避免快速移动时留下断点，脚本在前后两个点之间插值：
+**With Git and a local server:**
+
+```bash
+git clone https://github.com/ThreshoLdnnis/WebDesign8-Rider.git
+cd WebDesign8-Rider
+npx serve .
+```
+
+Open the local URL printed by the server, then select `/index.html` or `/blue-lightning.html`. The optional `npx` command requires Node.js and may download the server package.
+
+> **Network dependencies:** portraits are embedded in both HTML files, and the pink rider is embedded too. Blue Lightning loads its rider from the supplied CloudFront URL. Both editions request Google Fonts, with system-font fallbacks.
+
+**Try it:** move across the face and shoulders, make a faster stroke, then stop. On touch devices, drag to reveal; an idle brush wanders after roughly 2.5 seconds.
+
+<a id="en-design"></a>
+
+### 02 / Design notes
+
+- **A quiet stage, a strong subject.** Baby-pink gradients frame the cutout portrait; large gray and black typography moves behind it in opposite directions.
+- **A transformation you control.** Equipment appears only where the brush passes, allowing the portrait and rider to coexist in the same frame.
+- **A torn silhouette.** Overlapping hard-edge circles produce an irregular outline; shrinking marks restore the portrait over time.
+- **A separate electric layer.** Blue Lightning draws sparks above the figure without changing the reveal mask or intercepting pointer input.
+
+The two marquee lines read **DREAM RIDE SPARKLE** and **RIDE PRETTY STAY BOLDER**.
+
+<a id="en-reveal"></a>
+
+### 03 / Build the torn-edge Reveal
+
+**What you will learn:** pointer coordinates, stroke interpolation, temporary masks, Canvas compositing, and image registration.
+
+#### Step 1 — Understand the canvases
+
+| Surface | Responsibility |
+| :--- | :--- |
+| `#reveal` | Visible portrait/rider composite. |
+| `mask` | Offscreen canvas containing the active brush marks. |
+| `buf` | Offscreen canvas used to clip the rider to the mask. |
+| `rider` | Blue edition only: caches the fitted rider image. |
+| `#sparks` | Blue edition only: visible sparks and lightning overlay. |
+
+`front` is the original portrait; `back` is the rider image. Keep those names in mind when following the rendering code.
+
+#### Step 2 — Convert pointer motion into a continuous stroke
+
+Pointer events provide viewport coordinates. Subtract the figure's top-left position to obtain coordinates inside the portrait:
+
+```js
+const rect = figure.getBoundingClientRect();
+const x = clientX - rect.left;
+const y = clientY - rect.top;
+```
+
+Fast motion produces widely spaced events. Interpolate between consecutive positions to fill the gaps:
 
 ```js
 const step = Math.max(W, 260) * 0.04;
 const count = Math.min(40, Math.max(1, Math.ceil(distance / step)));
 ```
 
-每次输入最多补入 40 个印记。指针离开时重置上一个位置，避免重新进入页面时出现横跨画面的连线。
+The script adds intermediate marks, capped at 40 per input update. Leaving the hero clears the previous point, preventing a long connecting line on re-entry.
 
-### 2. 用 3～5 个圆生成一个有机笔刷
+#### Step 3 — Give the brush an organic outline
 
-每个印记由随机角度、偏移和半径的 **3～5 个重叠实心圆**组成。圆的边缘保持硬边，随机叠加后形成不规则轮廓。
+Each stamp contains **3–5 overlapping solid circles**. Their angles, offsets, and radii vary randomly. The circles have hard edges, with normal Canvas edge antialiasing; no blurred radial gradient is used for this mask.
 
 ```js
 const base = Math.max(W, 260) * (coarse ? 0.15 : 0.12);
 const n = 3 + Math.floor(Math.random() * 3);
+// Store position, creation time, and the generated circles.
 stamps.push({ x, y, t: now, lobes });
 ```
 
-触摸设备使用稍大的笔刷，方便手指操作。
-
-### 3. 每帧重画动态遮罩
-
-隐藏的 `mask` Canvas 存储当前所有有效印记。每个印记的生命周期是 **1100ms**：前约 **275ms** 保持原尺寸，随后逐渐缩小，过期后删除。
+The mask is cleared and rebuilt from the remaining stamps every frame. A stamp lives for **1100ms**: it holds its size for about **275ms**, then shrinks until it expires.
 
 ```js
 const k = Math.max(0, 1 - age / LIFE);
 const scale = k < 0.75 ? k / 0.75 : 1;
+// Lobe offsets use scale; lobe radii use scale ** 0.8.
 ```
 
-各个圆的偏移量随 `scale` 缩小，半径随 `scale ** 0.8` 缩小。因此视觉上的“消退”主要来自轮廓收缩，不是整块图像简单降低透明度。
+The disappearing trail is primarily a **geometric contraction**, rather than a whole-image opacity fade.
 
-### 4. 用 destination-out 擦除肖像
+#### Step 4 — Erase first, then reveal
 
-主画布先用 `source-over` 绘制原始肖像，再切换到 `destination-out`，画入遮罩：
+Use the **same mask** for both operations:
+
+1. Draw the original portrait with `source-over`.
+2. Erase the brush region with `destination-out`.
+3. On `buf`, clip the rider to that mask with `source-in`.
+4. Draw the clipped buffer onto the main canvas with `source-over`.
 
 ```js
+// Conceptual excerpt; the frame loop also clears the main canvas.
 ctx.globalCompositeOperation = 'source-over';
 drawCover(ctx, front);
 
 ctx.globalCompositeOperation = 'destination-out';
 ctx.drawImage(mask, 0, 0, W, H);
 ctx.globalCompositeOperation = 'source-over';
-```
 
-遮罩的实心区域会把原始肖像完全擦除。
-
-### 5. 用 source-in 把骑手裁剪到同一块遮罩
-
-离屏缓冲画布 `buf` 先画遮罩，再设置 `source-in`：后续绘制的骑手图像，只保留在遮罩范围内。
-
-下面是蓝色版的合成步骤；`rider` 是预先校准好尺寸的骑手缓存画布：
-
-```js
 bctx.globalCompositeOperation = 'source-over';
 bctx.clearRect(0, 0, W, H);
 bctx.drawImage(mask, 0, 0, W, H);
-
 bctx.globalCompositeOperation = 'source-in';
-bctx.drawImage(rider, 0, 0, W, H);
+bctx.drawImage(rider, 0, 0, W, H); // Blue: fitted image cache.
 bctx.globalCompositeOperation = 'source-over';
 
 ctx.drawImage(buf, 0, 0, W, H);
 ```
 
-粉色版在这一步直接用 `drawCover(bctx, back)` 绘制骑手图片。
+Pink Rider uses `drawCover(bctx, back)` instead of the cached `rider` canvas.
 
 ```mermaid
 flowchart LR
-  A[指针轨迹] --> B[插值与随机圆印记]
-  B --> C[动态 mask]
-  C --> D[destination-out 擦除肖像]
-  C --> E[source-in 裁剪骑手]
-  D --> F[source-over 合成最终画面]
-  E --> F
+  P[Pointer movement] --> S[Interpolated stamps]
+  S --> M[Brush mask]
+  M --> E[Erase portrait: destination-out]
+  M --> R[Clip rider: source-in]
+  E --> C[Final composite: source-over]
+  R --> C
 ```
 
-这样，笔刷外显示原始肖像，笔刷内显示骑手。**即使骑手 PNG 的某些部位透明，笔刷实心区域里也不会露出已经擦除的原始人物**，而是露出页面背景。笔刷收缩后，下一帧重新绘制的肖像自然恢复。
+> **Why erase the portrait?** Simply drawing a transparent rider PNG on top would let the original face or clothing show through its transparent regions. Erasing the portrait first ensures that, inside the opaque brush area, transparent rider pixels expose the page background instead.
 
-### 6. 蓝色版：把横版骑手对齐到半身肖像
+#### Step 5 — Align the equipment with the portrait
 
-蓝色骑手原图是 `2752 × 1536` 的横版透明素材，直接套用普通 `cover` 会造成头盔大小和身体位置不匹配。
+Both editions center and bottom-anchor the original portrait. The blue reference is a wide `2752 × 1536` image, so a separate `prepareRider()` function fits it to the existing half-body crop:
 
-`prepareRider()` 会先将素材注册到肖像的头肩位置：
+- Position and size the helmet/upper section using proportions of the figure height.
+- Split the source at 86% of its height and extend the lower chest to the bottom of the crop.
+- Cache the result after image load and on resize, then composite that cache once per frame.
 
-- 头盔与上半部依据人物容器的相对高度、宽度及顶部偏移绘制。
-- 在源图约 86% 高度处分段，把下方胸甲延展到人物裁切区域的底部。
-- 校准结果画入独立 `rider` Canvas，只在骑手图片加载完成和窗口尺寸改变时重算。
+This is a manual fit for the supplied portrait, not automatic body tracking or a uniformly scaled image. Blue Lightning waits for `backReady` before erasing the portrait, avoiding holes while the remote rider loads.
 
-因此，每帧合成只需将这个缓存画布一次性画入 `buf`，既保持头肩对齐，也避免对同一张大图反复进行分段计算。蓝色版还会等待 `backReady` 后才擦除肖像，防止骑手图片加载期间出现空洞。
+**Experiment:** increase `LIFE`, make a slow stroke, and watch how individual marks shrink independently. Then change the lobe count to compare a rounder brush with a more irregular one.
 
-## 蓝色闪电与火花
+<a id="en-lightning"></a>
 
-蓝色版新增装饰画布 `#sparks`，覆盖 Hero，使用 `pointer-events: none`。它与人物 Canvas、笔刷遮罩分离，最后叠加显示。
+### 04 / Add sparks and lightning
 
-### 火花粒子
+Blue Lightning's `#sparks` canvas covers the hero and uses `pointer-events: none`. Its drawing state is independent of the portrait canvas.
 
-`emitElectric()` 在指针移动时沿前后位置生成短线粒子，每次最多 6 个：
+| Component | How it works | Limit |
+| :--- | :--- | :--- |
+| **Sparks** | Up to 6 short-line particles per input update; approximately 70% cyan and 30% violet; velocity, drag, gravity, and lifetime updated using frame time. | 180 particles |
+| **Lightning** | 7 points form 6 jagged segments. Random lateral offsets bend the arc; a blue glow surrounds a thin pale core. | 20 arcs |
 
-- 约 70% 使用青蓝色，其余使用紫色。
-- 初始速度随机，随后加入阻力和轻微重力。
-- 每帧根据时间差 `dt` 更新位置、速度与生命值，适配不同刷新率。
-- 同时存在的粒子限制为 180 个，过期后移除。
+Longer pointer movements increase the probability of an arc, capped at 50% per update. Pointer-down forces an arc. Each arc fades over **140–190ms**. `lighter` blending adds the electric strokes together; `save()` / `restore()` keeps this state away from the reveal compositor.
 
-### 六段锯齿闪电
+The overlay also follows the mobile idle brush. With `prefers-reduced-motion: reduce`, the blue edition skips sparks and lightning while keeping Reveal available. Marquees slow to a 120-second cycle; the idle reveal remains active.
 
-闪电由 7 个点连接成 **6 段折线**，沿随机方向展开，并在中间加入横向扰动，形成电弧轮廓。
+<a id="en-customize"></a>
 
-- 指针移动距离越大，触发电弧的概率越高；按下指针也会触发一次。
-- 每道电弧持续约 **140～190ms**，按创建时间快速淡出。
-- 外层是带蓝色辉光的较粗线条，内层是更细、更亮的浅色电芯。
-- 同时存在的电弧限制为 20 道。
-- 绘制时使用 Canvas 的 `lighter` 合成，并通过 `save()` / `restore()` 隔离状态，不影响人物的擦除与裁剪。
+### 05 / Make it your own
 
-用户启用系统的“减少动态效果”偏好时，蓝色版跳过火花和闪电；人物 Reveal 仍然可用。
+Open the relevant HTML file and search for these values:
 
-## 移动端与加载
+| Location | Current value | Change it to… |
+| :--- | :--- | :--- |
+| `:root` → `--bg`, `--bg-2`, `--accent` | Pink palette | Restyle the stage and cursor. |
+| `LIFE` | `1100` | Keep brush marks visible longer or shorter. |
+| `addStamp()` → mouse/touch factors | `0.12` / `0.15` | Increase or decrease brush size. |
+| `.row.ghost` / `.row.solid` | `38s` / `32s` | Change marquee speed. |
+| `prepareRider()` → `top` | `H * 0.063` | Move the blue helmet vertically. |
+| `prepareRider()` → `upperHeight` | `H * 0.75` | Adjust the upper-section height. |
+| `prepareRider()` → width multiplier | `1.2` | Adjust the rider's width. |
+| `prepareRider()` → source split | `ih * 0.86` | Change where lower-chest extension begins. |
+| `emitElectric()` / `makeBolt()` | Particle counts, hues, arc duration | Tune the blue edition's electric effects. |
 
-- `matchMedia('(hover: none), (pointer: coarse)')` 实时判断触摸输入，并监听设备能力变化。
-- 手指拖动可以绘制 Reveal；闲置约 **2500ms** 后，笔刷自动缓慢游走。蓝色版的电光也会跟随这条轨迹。
-- 两个版本的原始肖像都内嵌在 HTML 中；粉色版的骑手图也内嵌在文件中。
-- **蓝色版的骑手图通过原始 CloudFront URL 在线加载，需要网络连接。** Google Fonts 字体也通过网络加载；字体不可用时使用系统字体回退。
+**Replace the images:** update the two image preloads, `#front.src`, and `back.src`. Use transparent images with comparable pose and framing. For a different person, recalibrate the helmet and shoulder fit; changing a URL alone does not align body proportions.
 
-## 运行方式
+When adding another edition, save a new HTML file and add a cover/entry here. Keep `index.html` as the original Pink Rider edition.
 
-下载整个仓库，或下载想体验的 HTML 文件，使用现代浏览器直接打开：
+<a id="en-help"></a>
 
-- `index.html`：粉色骑士
-- `blue-lightning.html`：蓝色闪电
+### 06 / Troubleshooting
 
-也可以在仓库目录运行任意静态服务器，例如：
+| Symptom | Check |
+| :--- | :--- |
+| Blue armor never appears | Check the CloudFront request and your network connection. The portrait remains visible until the rider is ready. |
+| Helmet and face do not line up | Revisit `prepareRider()` and the new image's pose, crop, and transparent margins. |
+| No sparks on the blue edition | Check the system's reduced-motion setting, then move the pointer after the rider loads. |
+| Custom code cannot export the canvas | Cross-origin images without CORS permission can taint it. Current compositing works, but pixel reads/export need an embedded, same-origin, or correctly CORS-enabled asset. |
 
-```bash
-npx serve .
-```
-
-再访问服务器地址下的 `/index.html` 或 `/blue-lightning.html`。
-
-## 文件结构
+### Project map
 
 ```text
 WebDesign8-Rider/
-├── index.html           # 原粉色骑士版
-├── blue-lightning.html  # 新蓝色闪电版
-├── cover.png            # 粉色版封面
-├── cover-blue.jpg       # 蓝色版封面
-├── pink-rider.png       # 粉色骑手独立素材，页面本身已内嵌
+├── index.html           # Original Pink Rider edition
+├── blue-lightning.html  # Blue Lightning edition
+├── cover.png            # Pink edition cover
+├── cover-blue.jpg       # Blue edition cover
+├── pink-rider.png       # Standalone pink asset; also embedded in index.html
 └── README.md
 ```
 
-技术栈：HTML、内联 CSS、原生 JavaScript、Canvas 2D、Inter Tight。
+### Contributing & license
+
+For proposed improvements, identify the affected edition, describe the behavior, and include a before/after capture when changing visuals. Useful exercises include brush experiments, image-fit improvements, and accessibility refinements.
+
+This public repository currently has **no `LICENSE` file**; no open-source license is declared. The portrait and rider imagery are project assets; this tutorial does not supply a separate asset license.
+
+[Back to top](#top) · [Read in Chinese ↓](#chinese)
+
+---
+
+<a id="chinese"></a>
+
+## 简体中文
+
+**一张肖像，两种骑士造型。** 移动鼠标画出撕裂边缘的轨迹，在笔刷经过的位置显示骑手装备；印记逐渐缩小，原始肖像随之恢复。
+
+本项目用两个独立 HTML 文件展示粉色骑士与蓝色闪电。CSS 和 JavaScript 全部内联，无框架、无构建步骤；原始粉色版与蓝色新版同时保留。
+
+**阅读导航：** [快速开始](#zh-start) · [设计亮点](#zh-design) · [Reveal 教程](#zh-reveal) · [闪电特效](#zh-lightning) · [自定义](#zh-customize) · [常见问题](#zh-help)
+
+### 选择你的版本
+
+| 版本 | 源文件 | 造型与特点 |
+| :--- | :--- | :--- |
+| **粉色骑士** | [index.html](./index.html) | 粉色头盔、虹彩面罩、白色赛车条纹与心形贴章。 |
+| **蓝色闪电** | [blue-lightning.html](./blue-lightning.html) | 紫色装甲、青色面罩、半身尺寸适配，以及蓝紫火花和闪电。 |
+
+顶部双封面记录了交互中的瞬间。GitHub 文件链接用于查看源码；体验效果时，请下载 HTML 文件并在浏览器中打开。
+
+<a id="zh-start"></a>
+
+### 01 / 快速开始
+
+**最简单的方式：** 下载仓库 ZIP，解压后直接打开 `index.html` 或 `blue-lightning.html`。
+
+**使用 Git 和本地服务器：**
+
+```bash
+git clone https://github.com/ThreshoLdnnis/WebDesign8-Rider.git
+cd WebDesign8-Rider
+npx serve .
+```
+
+打开终端打印的本地地址，访问 `/index.html` 或 `/blue-lightning.html`。`npx` 是可选方式，需要 Node.js，首次运行可能下载服务器依赖。
+
+> **网络依赖：** 两版的原始肖像都内嵌在 HTML 中，粉色骑手也已内嵌。蓝色骑手使用提供的 CloudFront 在线地址，需要网络连接。两版均通过 Google Fonts 加载字体，失败时回退到系统字体。
+
+**先体验一下：** 在脸部和肩部移动鼠标，尝试快速划过，再停下来观察。触摸设备可以拖动换装，闲置约 2.5 秒后笔刷会自动游走。
+
+<a id="zh-design"></a>
+
+### 02 / 设计亮点
+
+- **安静背景，突出人物。** 浅粉色渐变衬托透明半身像，浅灰与黑色大字在人物背后反向滚动，形成前后层次。
+- **由你控制的换装。** 装备只出现在笔刷覆盖的位置，让真实肖像与虚拟骑手在同一画面中交错。
+- **不规则的撕裂轮廓。** 随机实心圆叠成有机边缘；印记逐渐缩小，原始肖像重新出现。
+- **独立的电光层。** 蓝色版把火花画在人物上方，不改动 Reveal 遮罩，也不会拦截指针输入。
+
+背景两行大字分别是 **DREAM RIDE SPARKLE** 和 **RIDE PRETTY STAY BOLDER**。
+
+<a id="zh-reveal"></a>
+
+### 03 / 从零理解鼠标撕裂 Reveal
+
+**你将学到：** 指针坐标转换、路径插值、临时遮罩、Canvas 合成，以及两层人物的尺寸对齐。
+
+#### 第一步：认识各张画布
+
+| 画布 | 职责 |
+| :--- | :--- |
+| `#reveal` | 最终可见的肖像与骑手合成画面。 |
+| `mask` | 离屏画布，保存当前有效的笔刷印记。 |
+| `buf` | 离屏画布，把骑手裁剪到遮罩内部。 |
+| `rider` | 仅蓝色版：缓存已校准尺寸的骑手图层。 |
+| `#sparks` | 仅蓝色版：在上方显示火花和闪电。 |
+
+代码中的 `front` 是原始肖像，`back` 是骑手图片。理解这两个角色后，合成步骤会更容易跟上。
+
+#### 第二步：把鼠标轨迹变成连续笔画
+
+指针事件给出浏览器视口坐标。减去人物容器左上角的位置，就得到人物内部坐标：
+
+```js
+const rect = figure.getBoundingClientRect();
+const x = clientX - rect.left;
+const y = clientY - rect.top;
+```
+
+快速移动时，相邻事件之间可能距离很远。脚本在两点之间补入印记：
+
+```js
+const step = Math.max(W, 260) * 0.04;
+const count = Math.min(40, Math.max(1, Math.ceil(distance / step)));
+```
+
+每次输入最多补入 40 个印记。指针离开 Hero 时重置上一位置，避免重新进入时产生横跨页面的长线。
+
+#### 第三步：让笔刷边缘不规则
+
+一个印记由 **3～5 个随机重叠的实心圆**组成，每个圆的角度、偏移和半径都不同。边缘保持硬边，并由 Canvas 正常抗锯齿；这里没有使用模糊的径向渐变遮罩。
+
+```js
+const base = Math.max(W, 260) * (coarse ? 0.15 : 0.12);
+const n = 3 + Math.floor(Math.random() * 3);
+// 记录位置、创建时间和生成的圆。
+stamps.push({ x, y, t: now, lobes });
+```
+
+每帧清空 `mask`，再画入尚未过期的印记。每个印记存活 **1100ms**：前约 **275ms** 保持大小，随后逐渐缩小直至删除。
+
+```js
+const k = Math.max(0, 1 - age / LIFE);
+const scale = k < 0.75 ? k / 0.75 : 1;
+// 圆的偏移乘以 scale，半径乘以 scale ** 0.8。
+```
+
+所以轨迹的“消退”主要来自**轮廓收缩**，而不是整张骑手图片降低透明度。
+
+#### 第四步：先擦除，再显示骑手
+
+两次操作必须使用**同一张遮罩**：
+
+1. 使用 `source-over` 绘制原始肖像。
+2. 使用 `destination-out` 擦除笔刷区域。
+3. 在 `buf` 上使用 `source-in`，把骑手限制到同一遮罩内。
+4. 再用 `source-over` 将裁剪结果合成回主画布。
+
+```js
+// 原理节选；实际帧循环还会先清空主画布。
+ctx.globalCompositeOperation = 'source-over';
+drawCover(ctx, front);
+
+ctx.globalCompositeOperation = 'destination-out';
+ctx.drawImage(mask, 0, 0, W, H);
+ctx.globalCompositeOperation = 'source-over';
+
+bctx.globalCompositeOperation = 'source-over';
+bctx.clearRect(0, 0, W, H);
+bctx.drawImage(mask, 0, 0, W, H);
+bctx.globalCompositeOperation = 'source-in';
+bctx.drawImage(rider, 0, 0, W, H); // 蓝色版：已适配的骑手缓存。
+bctx.globalCompositeOperation = 'source-over';
+
+ctx.drawImage(buf, 0, 0, W, H);
+```
+
+粉色版在这一步直接调用 `drawCover(bctx, back)`，不经过 `rider` 缓存。
+
+```mermaid
+flowchart LR
+  P[指针移动] --> S[路径插值与印记]
+  S --> M[笔刷遮罩]
+  M --> E[destination-out 擦除肖像]
+  M --> R[source-in 裁剪骑手]
+  E --> C[source-over 最终合成]
+  R --> C
+```
+
+> **为什么必须先擦除？** 如果只是把透明骑手 PNG 盖在肖像上，原来的脸和衣服仍可能从透明区域透出来。先擦除肖像后，笔刷实心区域内的透明骑手像素会露出页面背景，而不是原始人物。
+
+#### 第五步：让装备与半身像对齐
+
+两版都对原始肖像进行水平居中和底部对齐。蓝色素材是 `2752 × 1536` 的横图，额外通过 `prepareRider()` 适配当前半身像：
+
+- 根据人物容器的相对高度，设置头盔与上半部的尺寸和偏移。
+- 在源图高度的 86% 处分段，把下方胸甲延展到裁切区域底部。
+- 图片加载完成或窗口尺寸改变后重算并缓存，每帧只合成缓存结果。
+
+这是针对当前肖像的手动适配，并非自动人体跟踪，也不是整张图片等比缩放。蓝色版会等待 `backReady` 后才擦除肖像，避免远程图片加载期间出现空洞。
+
+**动手练习：** 增大 `LIFE`，慢慢画一条轨迹，观察不同印记独立收缩；再改变圆的数量，比较更圆润与更不规则的笔刷轮廓。
+
+<a id="zh-lightning"></a>
+
+### 04 / 添加火花与闪电
+
+蓝色版的 `#sparks` 覆盖 Hero，并设置 `pointer-events: none`。它与人物画布使用独立的绘制状态。
+
+| 组件 | 实现方式 | 数量上限 |
+| :--- | :--- | :--- |
+| **火花** | 每次输入最多生成 6 个短线粒子，约 70% 青蓝、30% 紫色；依据帧时间更新速度、阻力、重力与生命值。 | 180 个粒子 |
+| **闪电** | 7 个点连接成 6 段锯齿折线，加入随机横向扰动；外层蓝色辉光，内层细亮电芯。 | 20 道电弧 |
+
+指针移动距离越大，触发电弧的概率越高，每次更新最高为 50%；按下指针时强制触发一次。电弧在 **140～190ms** 内淡出。使用 `lighter` 叠加电光，再用 `save()` / `restore()` 隔离状态，避免影响人物合成。
+
+移动端的闲置笔刷也会带动电光。系统启用 `prefers-reduced-motion: reduce` 时，蓝色版跳过火花和闪电，仍可使用 Reveal；背景大字放慢为 120 秒一轮，闲置 Reveal 仍会运行。
+
+<a id="zh-customize"></a>
+
+### 05 / 改成你自己的版本
+
+打开对应 HTML 文件，搜索下列参数：
+
+| 位置 | 当前值 | 调整作用 |
+| :--- | :--- | :--- |
+| `:root` → `--bg`、`--bg-2`、`--accent` | 粉色配色 | 修改背景与指针颜色。 |
+| `LIFE` | `1100` | 延长或缩短笔刷印记的存活时间。 |
+| `addStamp()` → 鼠标 / 触摸系数 | `0.12` / `0.15` | 增大或缩小笔刷。 |
+| `.row.ghost` / `.row.solid` | `38s` / `32s` | 修改两行大字的滚动速度。 |
+| `prepareRider()` → `top` | `H * 0.063` | 上下移动蓝色头盔。 |
+| `prepareRider()` → `upperHeight` | `H * 0.75` | 调整头盔与上半部高度。 |
+| `prepareRider()` → 宽度倍数 | `1.2` | 调整骑手横向宽度。 |
+| `prepareRider()` → 源图分段 | `ih * 0.86` | 调整下胸甲延展的起点。 |
+| `emitElectric()` / `makeBolt()` | 粒子数量、色相、电弧时长 | 调整蓝色版电光效果。 |
+
+**替换图片：** 同步修改两处图片 preload、`#front` 的 `src` 和 `back.src`。优先使用姿势与构图接近的透明图片。换人物后需要重新校准头盔和肩部；仅替换地址不能保证身体比例一致。
+
+如果新增第三种造型，请保存为新的 HTML 文件，并在这里补上封面和入口。`index.html` 继续保留原始粉色版。
+
+<a id="zh-help"></a>
+
+### 06 / 常见问题
+
+| 现象 | 排查方向 |
+| :--- | :--- |
+| 蓝色装备一直不出现 | 检查 CloudFront 请求与网络连接；图片就绪前页面会继续显示原始肖像。 |
+| 头盔与脸部对不齐 | 检查 `prepareRider()`，以及新图的姿势、裁切和透明留白。 |
+| 蓝色版看不到火花 | 检查系统的“减少动态效果”设置，并在骑手图加载后移动指针。 |
+| 自定义代码无法导出 Canvas | 无 CORS 权限的跨域图片可能污染画布。现有绘制与合成仍可运行，但读取像素或导出需要内嵌、同源或正确配置 CORS 的素材。 |
+
+### 项目结构
+
+```text
+WebDesign8-Rider/
+├── index.html           # 原始粉色骑士版
+├── blue-lightning.html  # 蓝色闪电版
+├── cover.png            # 粉色版封面
+├── cover-blue.jpg       # 蓝色版封面
+├── pink-rider.png       # 粉色独立素材，index.html 中也已内嵌
+└── README.md
+```
+
+### 参与改进与许可
+
+提出改进时，请标明影响哪个版本、描述行为变化；修改视觉效果时附上前后截图。可以从笔刷实验、人物适配和无障碍体验等方向入手。
+
+当前公开仓库**尚无 `LICENSE` 文件**，未声明开源许可证。肖像与骑手图片属于项目素材，本教程未提供独立的素材许可。
+
+[返回英文教程 ↑](#english) · [返回顶部 ↑](#top)
