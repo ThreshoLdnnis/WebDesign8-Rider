@@ -32,7 +32,7 @@ A hands-on guide to Canvas masking, organic brush trails, and electric particle 
 
 <a id="english"></a>
 
-## English
+## English tutorial
 
 Turn a static portrait into an interactive costume change. Move the pointer to paint a torn-edge trail, reveal the rider underneath, and watch the portrait return as each mark shrinks away.
 
